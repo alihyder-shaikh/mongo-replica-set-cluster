@@ -1,0 +1,9 @@
+---
+- name: Check rs.status()
+  become_user: "{{ container_user }}"
+  command: >
+    podman exec {{ mongo_container_name }}
+    mongosh --quiet --port {{ mongo_port }} --eval "try{rs.status().ok}catch(e){0}"
+  register: rs_status
+  changed_when: false
+  failed_when: false

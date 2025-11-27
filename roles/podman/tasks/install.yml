@@ -1,0 +1,14 @@
+---
+- name: Update apt cache
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
+
+- name: Install Podman packages
+  apt:
+    name:
+      - podman
+      - uidmap
+      - slirp4netns
+    state: present
+

@@ -1,0 +1,7 @@
+---
+- name: Install Podman
+  include_tasks: install.yml
+
+- name: Configure rootless user
+  include_tasks: user_config.yml
+

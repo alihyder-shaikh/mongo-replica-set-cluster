@@ -1,0 +1,12 @@
+---
+- name: Check existing replication status
+  include_tasks: check_status.yml
+
+- name: Initiate replica set if needed
+  include_tasks: initiate.yml
+  when: rs_status.stdout | string != "1"
+
+- name: Add members if not present
+  include_tasks: add_members.yml
+  when: rs_status.stdout | string == "1"
+

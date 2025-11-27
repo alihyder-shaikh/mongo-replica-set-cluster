@@ -1,0 +1,28 @@
+---
+- name: Build desired member host list
+  set_fact:
+    desired_hosts: "{{ groups['mongodb'] | map('extract', hostvars, 'ansible_host') | list }}"
+
+- name: Fetch current members
+  become_user: "{{ container_user }}"
+  command: >
+    podman exec {{ mongo_container_name }}
+    mongosh --quiet --port {{ mongo_port }}
+    --eval 'rs.status().members.map(m=>m.name)'
+  register: existing_hosts
+  changed_when: false
+  failed_when: false
+
+- name: Add missing members
+  become_user: "{{ container_user }}"
+  loop: "{{ desired_hosts }}"
+  loop_control:
+    loop_var: host_ip
+  command: >
+    podman exec {{ mongo_container_name }}
+    mongosh --quiet --port {{ mongo_port }}
+    --eval 'rs.add("{{ host_ip }}:{{ mongo_port }}")'
+  when: host_ip not in existing_hosts.stdout
+  register: add_results
+  changed_when: add_results is changed
+

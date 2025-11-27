@@ -1,0 +1,31 @@
+---
+- name: Ensure ubuntu user exists
+  user:
+    name: "{{ container_user | default('ubuntu') }}"
+    state: present
+
+- name: Ensure subuid/subgid mappings for rootless containers
+  lineinfile:
+    path: "{{ item }}"
+    line: "{{ container_user | default('ubuntu') }}:100000:65536"
+    create: yes
+  loop:
+    - /etc/subuid
+    - /etc/subgid
+
+- name: Create Podman data/log directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ container_user }}"
+    group: "{{ container_user }}"
+    mode: '0755'
+  loop:
+    - /home/{{ container_user }}/mongodb-data
+    - /home/{{ container_user }}/mongodb-logs
+    - /home/{{ container_user }}/mongodb
+
+- name: Enable lingering (so user services can run after logout)
+  command: "loginctl enable-linger {{ container_user }}"
+  changed_when: false
+

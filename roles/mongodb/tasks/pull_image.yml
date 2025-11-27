@@ -1,0 +1,7 @@
+---
+- name: Pull MongoDB image
+  become_user: "{{ container_user }}"
+  command: "podman pull {{ mongo_image }}"
+  register: pull_result
+  changed_when: "'Downloaded' in pull_result.stdout or 'Storing signatures' in pull_result.stdout"
+

@@ -1,0 +1,43 @@
+---
+- name: Ensure data and log directories exist
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ container_user }}"
+    group: "{{ container_user }}"
+    mode: '0755'
+  loop:
+    - "{{ mongo_data_path }}"
+    - "{{ mongo_log_path }}"
+
+- name: Stop old MongoDB container (if exists)
+  become_user: "{{ container_user }}"
+  command: "podman stop {{ mongo_container_name }} || true"
+  changed_when: false
+  failed_when: false
+
+- name: Remove old MongoDB container (if exists)
+  become_user: "{{ container_user }}"
+  command: "podman rm {{ mongo_container_name }} || true"
+  changed_when: false
+  failed_when: false
+
+- name: Run MongoDB container (rootless, port-mapped)
+  become_user: "{{ container_user }}"
+  command: >
+    podman run -d --name {{ mongo_container_name }}
+    --restart=always
+    -p {{ mongo_port }}:27017
+    -v {{ mongo_data_path }}:/data/db:Z
+    -v {{ mongo_log_path }}:/var/log/mongodb:Z
+    {{ mongo_image }}
+    --replSet {{ replset_name }} --bind_ip_all
+  register: run_result
+  changed_when: "'--name' in run_result.cmd"
+
+- name: Wait for mongod port to be available
+  wait_for:
+    host: "{{ ansible_host | default(inventory_hostname) }}"
+    port: "{{ mongo_port | int }}"
+    delay: 2
+    timeout: 60

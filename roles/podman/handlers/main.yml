@@ -1,0 +1,8 @@
+---
+- name: Restart Podman service
+  service:
+    name: podman
+    state: restarted
+  failed_when: false
+  ignore_errors: true
+

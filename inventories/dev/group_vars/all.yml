@@ -1,0 +1,34 @@
+# --- runtime / user ---
+container_user: ubuntu
+
+# --- image ---
+mongo_image: "docker.io/library/mongo:7.0"
+
+# --- replica set ---
+replset_name: "rs0"
+
+# Single-host (dev) override
+dev_single_host: true
+podman_host_gateway: "host.containers.internal"
+
+# effective_host will be used for replication
+effective_host: "{{ podman_host_gateway if dev_single_host else ansible_host }}"
+
+# Transparent host override for roles
+ansible_host: "{{ podman_host_gateway if dev_single_host else ansible_host }}"
+
+# Use your groups (db_primary + db_replicas) to build membership
+rs_members: "{{ groups['db_primary'] + groups['db_replicas'] }}"
+rs_initiate_on_host: "{{ groups['db_primary'][0] }}"
+
+# --- env file location (used by mongodb role) ---
+mongo_env_dir: "/home/{{ container_user }}/mongodb"
+
+# (Optional) sensible fallbacks if a host line misses a var
+# mongo_container_name: "{{ hostvars[inventory_hostname].mongo_container_name | default('mongodb-' + inventory_hostname) }}"
+# mongo_port: "{{ hostvars[inventory_hostname].mongo_port | default(27017) }}"
+# mongo_data_path: "{{ hostvars[inventory_hostname].mongo_data_path | default('/home/' + container_user + '/mongodb-data-' + inventory_hostname) }}"
+# mongo_log_path: "{{ hostvars[inventory_hostname].mongo_log_path | default('/home/' + container_user + '/mongodb-logs-' + inventory_hostname) }}"
+
+  # For single-host (dev) deployments
+# Detect that all ansible_host values are identical and override replication hosts

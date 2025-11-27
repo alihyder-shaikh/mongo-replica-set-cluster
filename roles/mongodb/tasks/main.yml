@@ -1,0 +1,9 @@
+---
+- name: Pull MongoDB image
+  include_tasks: pull_image.yml
+
+- name: Configure environment
+  include_tasks: config.yml
+
+- name: Run MongoDB container
+  include_tasks: run_container.yml

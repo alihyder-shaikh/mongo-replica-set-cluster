@@ -1,0 +1,18 @@
+---
+- name: Build members JSON for initiation
+  set_fact:
+    rs_members_json: >-
+      [{% for h in (groups['db_primary'] + groups['db_replicas']) %}
+        {"_id": {{ loop.index0 }},
+         "host": "{{ hostvars[h].effective_host }}:{{ hostvars[h].mongo_port | default(mongo_port) }}"}{{ "," if not loop.last else "" }}
+      {% endfor %}]
+
+- name: Initiate replica set
+  become_user: "{{ container_user }}"
+  command: >
+    podman exec {{ mongo_container_name }}
+    mongosh --quiet --port {{ mongo_port }}
+    --eval 'rs.initiate({_id:"{{ replset_name }}", members: {{ rs_members_json | to_json }} })'
+  register: rs_init
+  changed_when: "'ok' in rs_init.stdout or 'true' in rs_init.stdout"
+
